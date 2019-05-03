@@ -422,7 +422,7 @@ def run(init: bool, server: str, country_code: str, country: str, area: str, tcp
                     asus.run(aserver, country_code, nvram, "All", "adaptive", "Strict", tcp, test)
                     logger.success("SAVED SERVER " + aserver + " ON PORT " + port + " TO NVRAM")
                 return(connect(aserver, port, silent, test, skip_dns_patch, openvpn_options,
-                               credentials_file_path))
+                               credentials_file_path=credentials_file_path))
     elif server:
         # ask for and store credentials if not present, skip if "--test"
         if not test:
@@ -443,7 +443,7 @@ def run(init: bool, server: str, country_code: str, country: str, area: str, tcp
             return 0
         for i in range(20):  # pylint: disable=W0612
             return(connect(server, port, silent, test, skip_dns_patch, openvpn_options,
-                           credentials_file_path))
+                           credentials_file_path=credentials_file_path))
     else:
         logger.info('To see usage options type: "openpyn -h" or "openpyn --help"')
     return 0        # if everything went ok
@@ -990,7 +990,7 @@ using it to update DNS Resolver Entries", detected_os)
                 subprocess.run(
                     ["sudo", "openvpn", "--redirect-gateway", "--auth-retry",
                      "nointeract", "--config", vpn_config_file, "--auth-user-pass",
-                     credentials_file_path]
+                     __basefilepath__ + "credentials"]
                     + openvpn_options.split(), check=True)
             else:
                 subprocess.run(
