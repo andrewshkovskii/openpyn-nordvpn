@@ -421,7 +421,8 @@ def run(init: bool, server: str, country_code: str, country: str, area: str, tcp
                     # TODO return 0 on success else 1 in asus.run()
                     asus.run(aserver, country_code, nvram, "All", "adaptive", "Strict", tcp, test)
                     logger.success("SAVED SERVER " + aserver + " ON PORT " + port + " TO NVRAM")
-                return(connect(aserver, port, silent, test, skip_dns_patch, openvpn_options))
+                return(connect(aserver, port, silent, test, skip_dns_patch, openvpn_options,
+                               credentials_file_path))
     elif server:
         # ask for and store credentials if not present, skip if "--test"
         if not test:
@@ -441,7 +442,8 @@ def run(init: bool, server: str, country_code: str, country: str, area: str, tcp
             logger.success("SAVED SERVER " + server + " ON PORT " + port + " TO NVRAM")
             return 0
         for i in range(20):  # pylint: disable=W0612
-            return(connect(server, port, silent, test, skip_dns_patch, openvpn_options))
+            return(connect(server, port, silent, test, skip_dns_patch, openvpn_options,
+                           credentials_file_path))
     else:
         logger.info('To see usage options type: "openpyn -h" or "openpyn --help"')
     return 0        # if everything went ok
@@ -851,7 +853,12 @@ def uses_systemd_resolved() -> bool:
 
 
 def connect(server: str, port: str, silent: bool, test: bool, skip_dns_patch: bool,
-            openvpn_options: str, server_provider="nordvpn") -> bool:
+            openvpn_options: str, server_provider="nordvpn",
+            credentials_file_path: str = None) -> bool:
+
+    if not credentials_file_path:
+        credentials_file_path = __basefilepath__ + "credentials"
+
     detected_os = sys.platform
     if server_provider == "nordvpn":
         if port == "tcp":
@@ -931,7 +938,7 @@ using it to update DNS Resolver Entries", detected_os)
                     "--redirect-gateway",
                     "--auth-retry", "nointeract",
                     "--config", vpn_config_file,
-                    "--auth-user-pass", __basefilepath__ + "credentials",
+                    "--auth-user-pass", credentials_file_path,
                     "--script-security", "2",
                     "--up", up_down_script,
                     "--down", up_down_script,
@@ -983,13 +990,13 @@ using it to update DNS Resolver Entries", detected_os)
                 subprocess.run(
                     ["sudo", "openvpn", "--redirect-gateway", "--auth-retry",
                      "nointeract", "--config", vpn_config_file, "--auth-user-pass",
-                     __basefilepath__ + "credentials"]
+                     credentials_file_path]
                     + openvpn_options.split(), check=True)
             else:
                 subprocess.run(
                     ["sudo", "openvpn", "--redirect-gateway", "--auth-retry",
                      "nointeract", "--config", vpn_config_file, "--auth-user-pass",
-                     __basefilepath__ + "credentials",
+                     credentials_file_path,
                      "--management", "127.0.0.1", "7015", "--management-up-down"]
                     + openvpn_options.split(), check=True)
         except subprocess.CalledProcessError as openvpn_err:
