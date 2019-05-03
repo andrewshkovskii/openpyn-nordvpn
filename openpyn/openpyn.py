@@ -136,6 +136,11 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         '--credentials-file-path', dest='credentials_file_path', type=str,
         help='Credentials file path', required=False, default=None
     )
+    parser.add_argument(
+        '--force-update-config-files', dest='force_update_config_files',
+        help='Force update of VPN config files',
+        action='store_true', default=True
+    )
 
     return parser.parse_args(argv[1:])
 
@@ -159,7 +164,7 @@ def run(init: bool, server: str, country_code: str, country: str, area: str, tcp
         max_load: int, top_servers: int, pings: str, kill: bool, kill_flush: bool, update: bool, list_servers: bool,
         force_fw_rules: bool, p2p: bool, dedicated: bool, double_vpn: bool, tor_over_vpn: bool, anti_ddos: bool,
         netflix: bool, test: bool, internally_allowed: List, skip_dns_patch: bool, silent: bool, nvram: str,
-        openvpn_options: str, location: float, log_folder: str, credentials_file_path: str) -> bool:
+        openvpn_options: str, location: float, log_folder: str, credentials_file_path: str, force_update_config_files: bool = True) -> bool:
 
     if init:
         initialise(log_folder, credentials_file_path)
@@ -352,7 +357,7 @@ def run(init: bool, server: str, country_code: str, country: str, area: str, tcp
         kill_openpyn_process()
 
     elif update:
-        update_config_files()
+        update_config_files(force_update_config_files)
 
     # a hack to list all countries and their codes when no arg supplied with "-l"
     elif list_servers != 'nope':      # means "-l" supplied
@@ -449,11 +454,12 @@ def run(init: bool, server: str, country_code: str, country: str, area: str, tcp
     return 0        # if everything went ok
 
 
-def initialise(log_folder: str, credentials_file_path: str) -> bool:
+def initialise(log_folder: str, credentials_file_path: str,
+               force_update_config_files: bool = True) -> bool:
     if not credentials.check_credentials(credentials_file_path):
         credentials.save_credentials(credentials_file_path)
 
-    update_config_files()
+    update_config_files(force_update_config_files)
     if not os.path.exists(log_folder):
         os.mkdir(log_folder)
         os.chmod(log_folder, mode=0o777)
@@ -632,17 +638,18 @@ def kill_management_client() -> None:
     return
 
 
-def update_config_files() -> None:
+def update_config_files(force_update=True) -> None:
     root.verify_root_access("Root access needed to write files in " +
                             "'" + __basefilepath__ + "files/" + "'")
     try:
         zip_archive = __basefilepath__ + "ovpn.zip"
-        if os.path.exists(zip_archive):
+        if os.path.exists(zip_archive) and force_update:
             print(Fore.BLUE + "Previous update file already exists, deleting..." + Style.RESET_ALL)
             os.remove(zip_archive)
 
-        subprocess.check_call(
-            ["sudo", "wget", "https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip", "-P", __basefilepath__])
+        if not os.path.exists(zip_archive) or force_update:
+            subprocess.check_call(
+                ["sudo", "wget", "https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip", "-P", __basefilepath__])
     except subprocess.CalledProcessError:
         logger.error("Exception occurred while wgetting zip, is the internet working? \
 is nordcdn.com blocked by your ISP or Country?, If so use Privoxy \
