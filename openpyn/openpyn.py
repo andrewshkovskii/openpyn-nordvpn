@@ -448,7 +448,9 @@ def run(init: bool, server: str, country_code: str, country: str, area: str, tcp
 
 
 def initialise(log_folder: str, credentials_file_path: str) -> bool:
-    credentials.save_credentials(credentials_file_path)
+    if not credentials.check_credentials(credentials_file_path):
+        credentials.save_credentials(credentials_file_path)
+
     update_config_files()
     if not os.path.exists(log_folder):
         os.mkdir(log_folder)
