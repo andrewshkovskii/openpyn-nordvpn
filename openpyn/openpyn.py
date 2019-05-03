@@ -162,7 +162,7 @@ def run(init: bool, server: str, country_code: str, country: str, area: str, tcp
         openvpn_options: str, location: float, log_folder: str, credentials_file_path: str) -> bool:
 
     if init:
-        initialise(log_folder)
+        initialise(log_folder, credentials_file_path)
 
     fieldstyles = {
         'asctime': {'color': 'green'},
