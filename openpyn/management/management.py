@@ -11,19 +11,12 @@ from typing import List
 
 import verboselogs
 
-from openpyn import log_folder, log_format
+from openpyn import log_format
 
 verboselogs.install()
 logger = logging.getLogger(__package__)
 
 logger.setLevel(logging.VERBOSE)
-
-# Add another rotating handler to log to .log files
-file_handler = logging.handlers.TimedRotatingFileHandler(
-    log_folder + '/openpyn-notifications.log', when='W0', interval=4)
-file_handler_formatter = logging.Formatter(log_format)
-file_handler.setFormatter(file_handler_formatter)
-logger.addHandler(file_handler)
 
 
 def socket_connect(server, port):
@@ -32,7 +25,14 @@ def socket_connect(server, port):
     return s
 
 
-def show(do_notify):
+def show(do_notify, log_folder):
+    # Add another rotating handler to log to .log files
+    file_handler = logging.handlers.TimedRotatingFileHandler(
+        log_folder + '/openpyn-notifications.log', when='W0', interval=4)
+    file_handler_formatter = logging.Formatter(log_format)
+    file_handler.setFormatter(file_handler_formatter)
+    logger.addHandler(file_handler)
+
     detected_os = sys.platform
     sleep(1)
     if do_notify:
@@ -156,6 +156,10 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     parser.add_argument(
         '--do-notify', dest='do_notify', help='try to display desktop notifications.',
         action='store_true')
+    parser.add_argument(
+        '--log-folder', dest='log_folder', type=str, help='Log folder path',
+        default="/var/log/openpyn"
+    )
 
     return parser.parse_args(argv[1:])
 
@@ -163,7 +167,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
 def main() -> bool:
 
     args = parse_args(sys.argv)
-    return show(args.do_notify)
+    return show(args.do_notify, args.log_folder)
 
 
 if __name__ == '__main__':

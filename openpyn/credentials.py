@@ -3,7 +3,6 @@ import logging
 import os
 import subprocess
 import sys
-from typing import List
 
 import verboselogs
 from openpyn import __basefilepath__, root
@@ -11,14 +10,18 @@ from openpyn import __basefilepath__, root
 verboselogs.install()
 logger = logging.getLogger(__package__)
 
-credentials_file_path = __basefilepath__ + "credentials"
 
+def check_credentials(credentials_file_path=None) -> bool:
+    if credentials_file_path is None:
+        credentials_file_path = __basefilepath__ + "credentials"
 
-def check_credentials() -> bool:
     return os.path.exists(credentials_file_path)
 
 
-def save_credentials() -> None:
+def save_credentials(credentials_file_path=None) -> None:
+    if credentials_file_path is None:
+        credentials_file_path = __basefilepath__ + "credentials"
+
     if not sys.__stdin__.isatty():
         logger.critical("Please run %s in interactive mode", __name__)
         sys.exit(1)

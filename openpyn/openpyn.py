@@ -23,7 +23,7 @@ from openpyn import initd
 from openpyn import locations
 from openpyn import root
 from openpyn import systemd
-from openpyn import __basefilepath__, __version__, log_folder, log_format    # variables
+from openpyn import __basefilepath__, __version__, log_format    # variables
 
 verboselogs.install()
 logger = logging.getLogger(__package__)
@@ -128,6 +128,14 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         options, e.g. openpyn uk -o \'--status /var/log/status.log --log /var/log/log.log\'')
     parser.add_argument(
         '-loc', '--location', nargs=2, type=float, metavar=('latitude', 'longitude'))
+    parser.add_argument(
+        '--log-folder', dest='log_folder', type=str, help='Log folder path',
+        default="/var/log/openpyn"
+    )
+    parser.add_argument(
+        '--credentials-file-path', dest='credentials_file_path', type=str,
+        help='Credentials file path', required=False, default=None
+    )
 
     return parser.parse_args(argv[1:])
 
@@ -141,7 +149,8 @@ def main() -> bool:
         args.kill, args.kill_flush, args.update, args.list_servers,
         args.force_fw_rules, args.p2p, args.dedicated, args.double_vpn,
         args.tor_over_vpn, args.anti_ddos, args.netflix, args.test, args.internally_allowed,
-        args.skip_dns_patch, args.silent, args.nvram, args.openvpn_options, args.location)
+        args.skip_dns_patch, args.silent, args.nvram, args.openvpn_options, args.location,
+        args.log_folder, args.credentials_file_path)
     return return_code
 
 
@@ -150,7 +159,7 @@ def run(init: bool, server: str, country_code: str, country: str, area: str, tcp
         max_load: int, top_servers: int, pings: str, kill: bool, kill_flush: bool, update: bool, list_servers: bool,
         force_fw_rules: bool, p2p: bool, dedicated: bool, double_vpn: bool, tor_over_vpn: bool, anti_ddos: bool,
         netflix: bool, test: bool, internally_allowed: List, skip_dns_patch: bool, silent: bool, nvram: str,
-        openvpn_options: str, location: float) -> bool:
+        openvpn_options: str, location: float, log_folder: str, credentials_file_path: str) -> bool:
 
     if init:
         initialise(log_folder)
@@ -380,8 +389,8 @@ def run(init: bool, server: str, country_code: str, country: str, area: str, tcp
     if country_code:
         # ask for and store credentials if not present, skip if "--test"
         if not test:
-            if credentials.check_credentials() is False:
-                credentials.save_credentials()
+            if credentials.check_credentials(credentials_file_path) is False:
+                credentials.save_credentials(credentials_file_path)
 
         if len(country_code) > 2:   # full country name
             # get the country_code from the full name
@@ -416,8 +425,8 @@ def run(init: bool, server: str, country_code: str, country: str, area: str, tcp
     elif server:
         # ask for and store credentials if not present, skip if "--test"
         if not test:
-            if credentials.check_credentials() is False:
-                credentials.save_credentials()
+            if credentials.check_credentials(credentials_file_path) is False:
+                credentials.save_credentials(credentials_file_path)
 
         server = server.lower()
         # if "-f" used apply firewall rules
@@ -438,8 +447,8 @@ def run(init: bool, server: str, country_code: str, country: str, area: str, tcp
     return 0        # if everything went ok
 
 
-def initialise(log_folder: str) -> bool:
-    credentials.save_credentials()
+def initialise(log_folder: str, credentials_file_path: str) -> bool:
+    credentials.save_credentials(credentials_file_path)
     update_config_files()
     if not os.path.exists(log_folder):
         os.mkdir(log_folder)
